@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: First tempate to demonstrate Lambda function using Cloudformation
+Metadata: 
+
+Parameters: 
+
+Mappings: 
+
+Conditions: 
+
+Resources: 
+
+Outputs:
