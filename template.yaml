@@ -2,7 +2,10 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: First tempate to demonstrate Lambda function using Cloudformation
 Metadata: 
 
-Parameters: 
+Parameters:
+  LambdaExecutionRoleName:
+    Description: "IAM role name to be used by Lambda"
+    Type: String
 
 Mappings: 
 
@@ -19,7 +22,7 @@ Resources:
           "States": {
           "scheduling": {
             "Type": "Task",
-            "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_job_scheduler",
+            "Resource": "${LambdaFunctionJobScheduler.Arn}",
             "InputPath": "$",
             "OutputPath": "$",
             "ResultPath": "$",
@@ -106,19 +109,31 @@ Resources:
             ]
           }
         }
+      Role: !Ref LambdaExecutionRoleName
   LambdaFunctionJobScheduler:
     Type: AWS::Lambda::Function
     Properties:
-      Description: This Lambda function is responsible for scheduling of Jobs
+      Description: 'This Lambda function is responsible for scheduling of Jobs'
       Handler: lambda_function.lambda_handler
       Runtime: python3.8
-      CodeUri: src/lambda/LambdaFunctionJobScheduler.py
+      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionJobScheduler.py'
       MemorySize: 128
       Timeout: 120
-      Role: 'arn:aws:iam::078794018778:role/Proj-LambdaRole'
+      Role: !Ref LambdaExecutionRoleName
       Environment:
         Variables:
           ENV_CLUSTER_TABLE_NAME: hsmc_clusters
           ENV_JOB_STATUS_TABLE_NAME: hsmc_job_status
       ReservedConcurrentExecutions: 1
+  LambdaFunctionPushWorkload:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionPushWorkload.py'
+      Description: ''
+      MemorySize: 128
+      Timeout: 60
+      Role: !Ref LambdaExecutionRoleName
+      
 Outputs:
