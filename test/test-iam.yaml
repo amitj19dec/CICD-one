@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Testing the deployment of IAM role in LZ account
+Metadata:
+
+  Authors:
+    Description:  Amit Jaiswal (amit.jaiswal@arm.com)
+
+  Purpose:
+    Description: "This template is used to create an IAM Role and an IAM Policy.  In order to adhere the guidelines
+                  provided by ARM Cloud-Ops team, the name of the Role should start with 'Proj-*"
+
+
+
+
+Resources: 
+  iamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: "This role is created for testing Cloudformation template"
+      Policies:
+        - PolicyName: Proj-TestPolicy-inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'cloudformation:*'
+                Resource: '*'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      RoleName: Proj-TestRole-CFN
+
