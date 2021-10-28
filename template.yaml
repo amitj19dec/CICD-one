@@ -126,7 +126,7 @@ Resources:
       Handler: lambda_function.lambda_handler
       Runtime: python3.8
       CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionPushWorkload.py'
-      Description: ''
+      Description: 'Lambda function to push workload into Parallel Cluster Master.  Uses SSM'
       MemorySize: 128
       Timeout: 60
       Role: !Ref LambdaExecutionRoleName
@@ -137,7 +137,7 @@ Resources:
       Handler: lambda_function.lambda_handler
       Runtime: python3.8
       CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionWorkloadCHMOD.py'
-      Description: ''
+      Description: 'Lambda Function to run chmod on the workload.tgz which is present in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 120
       Role: !Ref LambdaExecutionRoleName
@@ -148,7 +148,7 @@ Resources:
       Handler: lambda_function.lambda_handler
       Runtime: python3.8
       CodeUri: .
-      Description: ''
+      Description: 'Lambda Function to invoke Launcher Script in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 60
       Role: !Ref LambdaExecutionRoleName
