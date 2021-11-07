@@ -2,13 +2,80 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: First tempate to demonstrate Lambda function using Cloudformation
 
 Parameters:
+  RegionToDeploy:
+    Type: String
+    Description: The AWS region where the resource needs to be deployed.
+  DeployType:
+    Type: String
+    Description: Target environment where the code will be deployed e.g 'dev', 'staging', 'prod' and any name.
+    AllowedPattern: ^.*[^0-9]$
+    ConstraintDescription: Must end with non-numeric character.
   LambdaExecutionRoleName:
     Description: "IAM role name to be used by Lambda"
     Type: String 
 
 Resources:
+  StepFunctionAccessEnableRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: "Allow StepFunctions to enable accessing Lambda service"
+      Policies:
+        - PolicyName: Proj-Policy-inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'cloudformation:*'
+                Resource: '*'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+      RoleName: !Sub 'Proj-StepFunctionAccessEnable-${DeployType}'
+  
+  LambdaServiceAccessEnableRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: "Allow Lambda service to handle different AWS Services"
+      Policies:
+        - PolicyName: Proj-Policy-inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'cloudformation:Describe*'
+                  - 'dynamodb:*'
+                  - 'lambda:*'
+                  - 'states:*'
+                  - 'sqs:*'
+                  - 's3"*'
+                Resource: '*'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+      RoleName: !Sub 'Proj-LambdaServiceAccessEnableRole-${DeployType}'
+
   StateMachineParallelClusterEngine:
     Type: 'AWS::StepFunctions::StateMachine'
+    RoleArn: !GetAtt 'StepFunctionAccessEnableRole.Arn'
     Properties:
       DefinitionString: !Sub |
         {
@@ -204,6 +271,7 @@ Resources:
           
   StateMachineScheduler:
     Type: 'AWS::StepFunctions::StateMachine'
+    RoleArn: !GetAtt 'StepFunctionAccessEnableRole.Arn'
     Properties:
       DefinitionString: !Sub |
         {
@@ -300,6 +368,7 @@ Resources:
           }
         }
       Role: !Ref LambdaExecutionRoleName
+  
   LambdaFunctionJobScheduler:
     Type: AWS::Lambda::Function
     Properties:
@@ -309,12 +378,15 @@ Resources:
       CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionJobScheduler.py'
       MemorySize: 128
       Timeout: 120
-      Role: !Ref LambdaExecutionRoleName
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
       Environment:
         Variables:
           ENV_CLUSTER_TABLE_NAME: hsmc_clusters
           ENV_JOB_STATUS_TABLE_NAME: hsmc_job_status
       ReservedConcurrentExecutions: 1
+      FunctionName: !Sub 'LambdaFunctionJobScheduler-${DeployType}'
+  
+  
   LambdaFunctionPushWorkload:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -324,8 +396,10 @@ Resources:
       Description: 'Lambda function to push workload into Parallel Cluster Master.  Uses SSM'
       MemorySize: 128
       Timeout: 60
-      Role: !Ref LambdaExecutionRoleName
-  
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionPushWorkload-${DeployType}'
+
+
   LambdaFunctionWorkloadCHMOD:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -335,8 +409,10 @@ Resources:
       Description: 'Lambda Function to run chmod on the workload.tgz which is present in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 120
-      Role: !Ref LambdaExecutionRoleName
-  
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionWorkloadCHMOD-${DeployType}'
+
+
   LambdaFunctionWorkloadLauncher:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -346,4 +422,5 @@ Resources:
       Description: 'Lambda Function to invoke Launcher Script in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 60
-      Role: !Ref LambdaExecutionRoleName
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionWorkloadLauncher-${DeployType}'
