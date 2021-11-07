@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: This is a lambda fn with inline code 
+Metadata: 
+  Author:
+    Description:  Amit Jaiswal (amit.jaiswal@arm.com)
+
+Parameters:
+  RegionToDeploy:
+    Type: String
+    Description: The AWS region where the resource needs to be deployed.
+  DeployType:
+    Type: String
+    Description: Target environment where the code will be deployed e.g 'dev', 'staging', 'prod' and any name.
+    AllowedPattern: ^.*[^0-9]$
+    ConstraintDescription: Must end with non-numeric character.
+
+
+ 
+
+Resources: 
+  iamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: "This role is created for testing Cloudformation template"
+      Policies:
+        - PolicyName: Proj-TestPolicy-inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'cloudformation:*'
+                Resource: '*'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      RoleName: !Sub 'Proj-TestRole-CFN-${DeployType}'
+  lambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: A Dummy Lambda funnction for testing the Cloudformation template Sanity
+      FunctionName: !Sub 'TheDummyLambdaFunction-${DeployType}'
+      Handler: lambda_function.lambda_handler 
+      MemorySize: 128
+      Role: !GetAtt iamRole.Arn
+      Runtime: python3.8
+      Timeout: 120
+      Code:
+        ZipFile:
+          "import json
+          def lambda_handler(event, context):
+            print('Hello world')"
+          
+            
+      Tags:
+        - Key: DummyKeyName
+          Value: DummyValueName
