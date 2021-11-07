@@ -10,9 +10,7 @@ Parameters:
     Description: Target environment where the code will be deployed e.g 'dev', 'staging', 'prod' and any name.
     AllowedPattern: ^.*[^0-9]$
     ConstraintDescription: Must end with non-numeric character.
-  LambdaExecutionRoleName:
-    Description: "IAM role name to be used by Lambda"
-    Type: String 
+
 
 Resources:
   StepFunctionAccessEnableRole:
@@ -45,7 +43,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
-      AssumeRolePolicyDocument: 
+      AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
@@ -61,22 +59,21 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: 
+                Action:
                   - 'cloudformation:Describe*'
-                  - 'dynamodb:*'
                   - 'lambda:*'
-                  - 'states:*'
                   - 'sqs:*'
-                  - 's3"*'
+                  - 'dynamodb:*'
+                  - 's3:*'
                 Resource: '*'
-      ManagedPolicyArns: 
+      ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
       RoleName: !Sub 'Proj-LambdaServiceAccessEnableRole-${DeployType}'
 
   StateMachineParallelClusterEngine:
     Type: 'AWS::StepFunctions::StateMachine'
-    RoleArn: !GetAtt 'StepFunctionAccessEnableRole.Arn'
     Properties:
+      Role: !GetAtt 'StepFunctionAccessEnableRole.Arn'
       DefinitionString: !Sub |
         {
           "StartAt": "get suitable instance type",
@@ -270,9 +267,9 @@ Resources:
         }      
           
   StateMachineScheduler:
-    Type: 'AWS::StepFunctions::StateMachine'
-    RoleArn: !GetAtt 'StepFunctionAccessEnableRole.Arn'
+    Type: 'AWS::StepFunctions::StateMachine' 
     Properties:
+      Role: !GetAtt 'StepFunctionAccessEnableRole.Arn'
       DefinitionString: !Sub |
         {
           "Comment": "AWS Step Functions Example",

@@ -8,16 +8,21 @@ Metadata:
   Purpose:
     Description: "This template is used to create an IAM Role and an IAM Policy.  In order to adhere the guidelines
                   provided by ARM Cloud-Ops team, the name of the Role should start with 'Proj-*"
-
-
-
-
+Parameters:
+  RegionToDeploy:
+    Type: String
+    Description: The AWS region where the resource needs to be deployed.
+  DeployType:
+    Type: String
+    Description: Target environment where the code will be deployed e.g 'dev', 'staging', 'prod' and any name.
+    AllowedPattern: ^.*[^0-9]$
+    ConstraintDescription: Must end with non-numeric character.
 Resources: 
-  iamRole:
+  LambdaServiceAccessEnableRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
-      AssumeRolePolicyDocument: 
+      AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
@@ -26,16 +31,23 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      Description: "This role is created for testing Cloudformation template"
+      Description: "Allow Lambda service to handle different AWS Services"
       Policies:
-        - PolicyName: Proj-TestPolicy-inline
+        - PolicyName: Proj-Policy-inline
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: 'cloudformation:*'
+                Action:
+                  - 'cloudformation:Describe*'
+                  - 'lambda:*'
+                  - 'sqs:*'
+                  - 'dynamodb:*'
+                  - 's3:*'
                 Resource: '*'
-      ManagedPolicyArns: 
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
-      RoleName: Proj-TestRole-CFN
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+      RoleName: !Sub 'Proj-LambdaServiceAccessEnableRole-${DeployType}'
+
+
 
