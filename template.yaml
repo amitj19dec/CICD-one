@@ -70,7 +70,6 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
       RoleName: !Sub 'Proj-LambdaServiceAccessEnableRole-${DeployType}'
 
-  
   StateMachineParallelClusterEngine:
     Type: 'AWS::StepFunctions::StateMachine'
     Properties:
@@ -383,7 +382,6 @@ Resources:
       ReservedConcurrentExecutions: 1
       FunctionName: !Sub 'LambdaFunctionJobScheduler-${DeployType}'
   
-  
   LambdaFunctionPushWorkload:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -395,7 +393,6 @@ Resources:
       Timeout: 60
       Role: !GetAtt LambdaServiceAccessEnableRole.Arn
       FunctionName: !Sub 'LambdaFunctionPushWorkload-${DeployType}'
-
 
   LambdaFunctionWorkloadCHMOD:
     Type: 'AWS::Lambda::Function'
@@ -409,7 +406,6 @@ Resources:
       Role: !GetAtt LambdaServiceAccessEnableRole.Arn
       FunctionName: !Sub 'LambdaFunctionWorkloadCHMOD-${DeployType}'
 
-
   LambdaFunctionWorkloadLauncher:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -422,8 +418,7 @@ Resources:
       Role: !GetAtt LambdaServiceAccessEnableRole.Arn
       FunctionName: !Sub 'LambdaFunctionWorkloadLauncher-${DeployType}'
   
-
- LambdaFunctionInstanceSelection:
+  LambdaFunctionInstanceSelection:
     Type: 'AWS::Lambda::Function'
     Properties:
       Handler: lambda_function.lambda_handler
@@ -497,7 +492,6 @@ Resources:
       FunctionName: !Sub 'LambdaFunctionClusterCreationStatus-${DeployType}'
       Layers:
         - 'arn:aws:lambda:us-west-2:078794018778:layer:pc270:2'
-
 
   LambdaFunctionMasterInstanceDetails:
     Type: 'AWS::Lambda::Function'
