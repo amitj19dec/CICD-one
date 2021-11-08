@@ -80,7 +80,7 @@ Resources:
           "States": {
             "get suitable instance type": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_instance_selection",
+              "Resource": "${LambdaFunctionInstanceSelection.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
               "ResultPath": "$.EFS.instance_type",
@@ -102,7 +102,7 @@ Resources:
             },
             "prepare pcluster config file": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_pclusterconfig_instantiate",
+              "Resource": "${LambdaFunctionPclusterConfigInstantiate.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
               "ResultPath": "$",
@@ -124,7 +124,7 @@ Resources:
             },
             "invoke pcluster create": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_pcluster_creation",
+              "Resource": "${LambdaFunctionClusterCreation.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
               "ResultPath": "$.pcluster_create",
@@ -160,7 +160,7 @@ Resources:
             },
             "check pcluster status": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_pcluster_status",
+              "Resource": "${LambdaFunctionClusterCreationStatus.Arn}",
               "ResultPath": "$.pcluster.status",
               "TimeoutSeconds": 300,
               "Next": "is pcluster ready",
@@ -221,7 +221,7 @@ Resources:
             },
             "get pcluster master instance details": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_pclustermaster_details",
+              "Resource": "${LambdaFunctionMasterInstanceDetails.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
               "ResultPath": "$",
@@ -243,7 +243,7 @@ Resources:
             },
             "log the details into db": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:us-west-2:078794018778:function:v1_pcluster_register",
+              "Resource": "${LambdaFunctionLogInstanceDetailsInDynamoDB.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
               "ResultPath": "$",
@@ -272,7 +272,7 @@ Resources:
       Role: !GetAtt 'StepFunctionAccessEnableRole.Arn'
       DefinitionString: !Sub |
         {
-          "Comment": "AWS Step Functions Example",
+          "Comment": "AWS Step Functions",
           "StartAt": "scheduling",
           "States": {
           "scheduling": {
@@ -414,9 +414,113 @@ Resources:
     Properties:
       Handler: lambda_function.lambda_handler
       Runtime: python3.8
-      CodeUri: .
+      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionWorkloadLauncher.py'
       Description: 'Lambda Function to invoke Launcher Script in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 60
       Role: !GetAtt LambdaServiceAccessEnableRole.Arn
       FunctionName: !Sub 'LambdaFunctionWorkloadLauncher-${DeployType}'
+  
+
+ LambdaFunctionInstanceSelection:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionInstanceSelection.py'
+      Description: 'Lambda Function to appropiately select the instance'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionInstanceSelection-${DeployType}' 
+  
+  LambdaFunctionPclusterConfigInstantiate:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionPclusterConfigInstantiate.py'
+      Description: 'Lambda Function to instantiate the pcluster config from input json and defaults.'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionInstanceSelection-${DeployType}'
+      Environment:
+        Variables:
+          ENV_COMPUTE_SUBNETS: subnet-02f23b848a57c997c subnet-009533dfc7f1b8822
+          ENV_COMPUTE_SUBNETS_VPC2: subnet-05ef5190811add3ec subnet-0d22d39e62448e6ec
+          ENV_MASTER_SUBNETS: subnet-0010e9d7052535060 subnet-05a95d03f9d2e3d87
+          ENV_MASTER_SUBNETS_VPC2: subnet-0f53297dee0ceae1c subnet-0fafe3a3c2aecd26d
+          ENV_PROXY_SERVER: >-
+            http://ProxyLoadBallancer-4062348da7a3ad2a.elb.us-west-2.amazonaws.com:3128
+          ENV_PROXY_SERVER_VPC2: >-
+            http://ProxyLoadBallancerVPC2-9e91024c11830d86.elb.us-west-2.amazonaws.com:3128
+          ENV_VPC2_ID: vpc-0e69be69b719bc5a4
+  
+  
+   LambdaFunctionClusterCreation:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionClusterCreation.py'
+      Description: 'Lambda Function to invoke Launcher Script in Parallel Cluster Master. Uses SSM'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionClusterCreation-${DeployType}'
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-0dbed148ee1293020
+        SubnetIds:
+          - subnet-05a95d03f9d2e3d87
+          - subnet-009533dfc7f1b8822
+          - subnet-02f23b848a57c997c
+          - subnet-0010e9d7052535060
+          - subnet-06ae1a452fe129ac9
+          - subnet-08dd8fdbc2fc95066
+      Environment:
+        Variables:
+          ENV_SSM_INSTANCE_ID: i-07f1d82e6b2e3f60e
+
+  LambdaFunctionClusterCreationStatus:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionClusterCreationStatus.py'
+      Description: 'Lambda Function to check the status of the cluster in interest'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionClusterCreationStatus-${DeployType}'
+      Layers:
+        - 'arn:aws:lambda:us-west-2:078794018778:layer:pc270:2'
+
+
+  LambdaFunctionMasterInstanceDetails:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionMasterInstanceDetails.py'
+      Description: 'Lambda Function to get Instance ID and IP Address of master instance'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionMasterInstanceDetails-${DeployType}' 
+
+  LambdaFunctionLogInstanceDetailsInDynamoDB:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionLogInstanceDetailsInDynamoDB.py'
+      Description: 'Lambda Function to appropiately select the instance'
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt LambdaServiceAccessEnableRole.Arn
+      FunctionName: !Sub 'LambdaFunctionLogInstanceDetailsInDynamoDB-${DeployType}'
+      Environment:
+        Variables:
+          ENV_CLUSTER_TABLE_NAME: hsmc_clusters
