@@ -13,6 +13,7 @@ Parameters:
 
 
 Resources:
+  
   StepFunctionAccessEnableRole:
     Type: AWS::IAM::Role
     Properties:
@@ -369,9 +370,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Description: 'This Lambda function is responsible for scheduling of Jobs'
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionJobScheduler.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionJobScheduler.py'
+      Code: 'src/lambda/sfn-job-scheduling/LambdaFunctionJobScheduler.py'
       MemorySize: 128
       Timeout: 120
       Role: !GetAtt LambdaServiceAccessEnableRole.Arn
@@ -385,9 +386,9 @@ Resources:
   LambdaFunctionPushWorkload:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionPushWorkload.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionPushWorkload.py'
+      Code: 'src/lambda/sfn-job-scheduling/LambdaFunctionPushWorkload.py'
       Description: 'Lambda function to push workload into Parallel Cluster Master.  Uses SSM'
       MemorySize: 128
       Timeout: 60
@@ -397,9 +398,9 @@ Resources:
   LambdaFunctionWorkloadCHMOD:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionWorkloadCHMOD.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionWorkloadCHMOD.py'
+      Code: 'src/lambda/sfn-job-scheduling/LambdaFunctionWorkloadCHMOD.py'
       Description: 'Lambda Function to run chmod on the workload.tgz which is present in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 120
@@ -409,9 +410,9 @@ Resources:
   LambdaFunctionWorkloadLauncher:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionWorkloadLauncher.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-job-scheduling/LambdaFunctionWorkloadLauncher.py'
+      Code: 'src/lambda/sfn-job-scheduling/LambdaFunctionWorkloadLauncher.py'
       Description: 'Lambda Function to invoke Launcher Script in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 60
@@ -421,9 +422,9 @@ Resources:
   LambdaFunctionInstanceSelection:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionInstanceSelection.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionInstanceSelection.py'
+      Code: 'src/lambda/sfn-pcluster-engine/LambdaFunctionInstanceSelection.py'
       Description: 'Lambda Function to appropiately select the instance'
       MemorySize: 128
       Timeout: 60
@@ -433,9 +434,9 @@ Resources:
   LambdaFunctionPclusterConfigInstantiate:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionPclusterConfigInstantiate.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionPclusterConfigInstantiate.py'
+      Code: 'src/lambda/sfn-pcluster-engine/LambdaFunctionPclusterConfigInstantiate.py'
       Description: 'Lambda Function to instantiate the pcluster config from input json and defaults.'
       MemorySize: 128
       Timeout: 60
@@ -448,18 +449,17 @@ Resources:
           ENV_MASTER_SUBNETS: subnet-0010e9d7052535060 subnet-05a95d03f9d2e3d87
           ENV_MASTER_SUBNETS_VPC2: subnet-0f53297dee0ceae1c subnet-0fafe3a3c2aecd26d
           ENV_PROXY_SERVER: >-
-            http://ProxyLoadBallancer-4062348da7a3ad2a.elb.us-west-2.amazonaws.com:3128
+            'http://ProxyLoadBallancer-4062348da7a3ad2a.elb.us-west-2.amazonaws.com:3128'
           ENV_PROXY_SERVER_VPC2: >-
-            http://ProxyLoadBallancerVPC2-9e91024c11830d86.elb.us-west-2.amazonaws.com:3128
+            'http://ProxyLoadBallancerVPC2-9e91024c11830d86.elb.us-west-2.amazonaws.com:3128'
           ENV_VPC2_ID: vpc-0e69be69b719bc5a4
-  
-  
-   LambdaFunctionClusterCreation:
+
+  LambdaFunctionClusterCreation:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionClusterCreation.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionClusterCreation.py'
+      Code: 'src/lambda/sfn-pcluster-engine/LambdaFunctionClusterCreation.py'
       Description: 'Lambda Function to invoke Launcher Script in Parallel Cluster Master. Uses SSM'
       MemorySize: 128
       Timeout: 60
@@ -482,9 +482,9 @@ Resources:
   LambdaFunctionClusterCreationStatus:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionClusterCreationStatus.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionClusterCreationStatus.py'
+      Code: 'src/lambda/sfn-pcluster-engine/LambdaFunctionClusterCreationStatus.py'
       Description: 'Lambda Function to check the status of the cluster in interest'
       MemorySize: 128
       Timeout: 60
@@ -496,9 +496,9 @@ Resources:
   LambdaFunctionMasterInstanceDetails:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionMasterInstanceDetails.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionMasterInstanceDetails.py'
+      Code: 'src/lambda/sfn-pcluster-engine/LambdaFunctionMasterInstanceDetails.py'
       Description: 'Lambda Function to get Instance ID and IP Address of master instance'
       MemorySize: 128
       Timeout: 60
@@ -508,9 +508,9 @@ Resources:
   LambdaFunctionLogInstanceDetailsInDynamoDB:
     Type: 'AWS::Lambda::Function'
     Properties:
-      Handler: lambda_function.lambda_handler
+      Handler: LambdaFunctionLogInstanceDetailsInDynamoDB.lambda_handler
       Runtime: python3.8
-      CodeUri: 'src/lambda/sfn-pcluster-engine/LambdaFunctionLogInstanceDetailsInDynamoDB.py'
+      Code: 'src/lambda/sfn-pcluster-engine/LambdaFunctionLogInstanceDetailsInDynamoDB.py'
       Description: 'Lambda Function to appropiately select the instance'
       MemorySize: 128
       Timeout: 60
