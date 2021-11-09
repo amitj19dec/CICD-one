@@ -63,6 +63,7 @@ Resources:
                 Action:
                   - 'cloudformation:Describe*'
                   - 'lambda:*'
+                  - 'ec2:*'
                   - 'sqs:*'
                   - 'dynamodb:*'
                   - 's3:*'
