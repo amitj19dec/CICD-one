@@ -82,7 +82,7 @@ Resources:
           "States": {
             "get suitable instance type": {
               "Type": "Task",
-              "Resource": "${LambdaFunctionInstanceSelection.Arn}",
+              "Resource": "${StateMachineParallelClusterEngine.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
               "ResultPath": "$.EFS.instance_type",
