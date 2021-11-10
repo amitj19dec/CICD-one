@@ -1,0 +1,190 @@
+{
+    "StartAt": "get suitable instance type",
+    "States": {
+      "get suitable instance type": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionInstanceSelection.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$.EFS.instance_type",
+        "TimeoutSeconds": 60,
+        "Next": "prepare pcluster config file",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.TooManyRequestsException",
+              "Lambda.SdkClientException",
+              "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+          }
+        ]
+      },
+      "prepare pcluster config file": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionPclusterConfigInstantiate.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "TimeoutSeconds": 60,
+        "Next": "invoke pcluster create",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.TooManyRequestsException",
+              "Lambda.SdkClientException",
+              "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+          }
+        ]
+      },
+      "invoke pcluster create": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionClusterCreation.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$.pcluster_create",
+        "TimeoutSeconds": 60,
+        "Next": "WaitForSomeTime",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.TooManyRequestsException",
+              "Lambda.SdkClientException",
+              "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+          }
+        ]
+      },
+      "WaitForSomeTime": {
+        "Type": "Wait",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "Seconds": 60,
+        "Next": "check pcluster status"
+      },
+      "WaitForMoreTime": {
+        "Type": "Wait",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "Seconds": 120,
+        "Next": "invoke pcluster create"
+      },
+      "check pcluster status": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionClusterCreationStatus.Arn}",
+        "ResultPath": "$.pcluster.status",
+        "TimeoutSeconds": 300,
+        "Next": "is pcluster ready",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.TooManyRequestsException",
+              "Lambda.SdkClientException",
+              "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+          }
+        ]
+      },
+      "is pcluster ready": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.pcluster.status",
+            "StringEquals": "CREATE_IN_PROGRESS",
+            "Next": "Power nap of 300 secs"
+          },
+          {
+            "Variable": "$.pcluster.status",
+            "StringEquals": "NOT_FOUND",
+            "Next": "WaitForMoreTime"
+          },
+          {
+            "Variable": "$.pcluster.status",
+            "StringEquals": "ROLLBACK_COMPLETE",
+            "Next": "log the details into db"
+          },
+          {
+            "Variable": "$.pcluster.status",
+            "StringEquals": "ROLLBACK_IN_PROGRESS",
+            "Next": "log the details into db"
+          },
+          {
+            "Variable": "$.pcluster.status",
+            "StringEquals": "CREATE_COMPLETE",
+            "Next": "pcluster created"
+          }
+        ]
+      },
+      "Power nap of 300 secs": {
+        "Type": "Wait",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "Seconds": 300,
+        "Next": "check pcluster status"
+      },
+      "pcluster created": {
+        "Type": "Pass",
+        "Next": "get pcluster master instance details"
+      },
+      "get pcluster master instance details": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionMasterInstanceDetails.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "TimeoutSeconds": 60,
+        "Next": "log the details into db",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.TooManyRequestsException",
+              "Lambda.SdkClientException",
+              "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+          }
+        ]
+      },
+      "log the details into db": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionLogInstanceDetailsInDynamoDB.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.Unknown",
+              "Lambda.TooManyRequestsException",
+              "Lambda.SdkClientException",
+              "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+          }
+        ],
+        "TimeoutSeconds": 60,
+        "End": true
+      }
+    }
+  }

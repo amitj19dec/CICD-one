@@ -1,0 +1,27 @@
+Resources:
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [W3002] # "This code may only work with `package` cli command ..."
+    Properties:
+      FunctionName: PrintEvent
+      Role: !Sub '${LambdaExecutionRole.Arn}'
+      Handler: print_event.handler
+      Runtime: python3.8
+      Code: ./print_event.py
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'

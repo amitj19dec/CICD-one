@@ -1,0 +1,32 @@
+Resources:
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - W3002
+    Properties:
+      FunctionName: PrintEvent
+      Role:
+        Fn::Sub: ${LambdaExecutionRole.Arn}
+      Handler: print_event.handler
+      Runtime: python3.8
+      Code:
+        S3Bucket: amit-j
+        S3Key: cloudformation/packages/6511e66328d2bc3a6729d72b85a7c918
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary:
+        Fn::Sub: arn:aws:iam::${AWS::AccountId}:policy/ProjAdminsPermBoundaryv2
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole

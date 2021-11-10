@@ -1,0 +1,94 @@
+{
+    "Comment": "AWS Step Functions",
+    "StartAt": "scheduling",
+    "States": {
+        "scheduling": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionJobScheduler.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "TimeoutSeconds": 60,
+        "Next": "push workload into pcluster",
+        "Retry": [
+            {
+            "ErrorEquals": [
+                "Lambda.Unknown",
+                "Lambda.ServiceException",
+                "Lambda.TooManyRequestsException",
+                "ProvisionedThroughputExceededException",
+                "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+            }
+        ]
+        },
+        "push workload into pcluster": {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionPushWorkload.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "TimeoutSeconds": 60,
+        "Next": "give permissions",
+            "Retry": [
+            {
+            "ErrorEquals": [
+                "Lambda.Unknown",
+                "Lambda.TooManyRequestsException",
+                "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+            }
+            ]
+        },
+        "give permissions": 
+        {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionWorkloadCHMOD.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "TimeoutSeconds": 60,
+        "Next": "start workload launcher script ",
+        "Retry": [
+        {
+            "ErrorEquals": [
+            "Lambda.Unknown",
+            "Lambda.TooManyRequestsException",
+            "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+        }
+        ]
+        },
+        "start workload launcher script ": 
+        {
+        "Type": "Task",
+        "Resource": "${LambdaFunctionWorkloadCHMOD.Arn}",
+        "InputPath": "$",
+        "OutputPath": "$",
+        "ResultPath": "$",
+        "TimeoutSeconds": 60,
+        "End": true,
+        "Retry": [
+        {
+            "ErrorEquals": [
+            "Lambda.Unknown",
+            "Lambda.TooManyRequestsException",
+            "States.DataLimitExceeded"
+            ],
+            "IntervalSeconds": 10,
+            "MaxAttempts": 10,
+            "BackoffRate": 3
+        }
+        ]
+        }
+    }
+}
